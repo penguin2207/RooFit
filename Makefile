@@ -12,7 +12,7 @@ LIBS = $(shell root-config --libs)
 all: $(TARGET)
 
 clean:
-	rm -f $(TARGET) build/*.o src/pdfDict.* > /dev/null 2>&1
+	rm -f $(TARGET) build/* > /dev/null 2>&1
 
 $(TARGET): $(PDFOBJECTS) build/pdfDict.o
 	g++ $(LFLAGS) -o $(TARGET) $(LIBS) $^
@@ -26,5 +26,5 @@ build/%.o: src/%.cc include/%.h | build
 build:
 	@mkdir -p $@
 
-build/pdfDict.cc: $(PDFHEADERS) src/LinkDef.h
+build/pdfDict.cc: $(PDFHEADERS) include/LinkDef.h
 	rootcint -f $@ -c $(EXTRAINC) $^
