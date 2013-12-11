@@ -1,8 +1,7 @@
 TARGET = libSusyRooFit.so
-PDFSOURCES = $(wildcard src/*Shape.cc)
+PDFSOURCES = $(wildcard src/*.cc)
 PDFHEADERS = $(patsubst src/%.cc,include/%.h,$(PDFSOURCES))
-ALLSOURCES = $(PDFSOURCES) src/pdfDict.cc
-ALLOBJECTS = $(patsubst src/%.cc,%.o,$(ALLSOURCES))
+PDFOBJECTS = $(patsubst src/%.cc,build/%.o,$(PDFSOURCES))
 
 CFLAGS = -c -O3 -Wall -fPIC $(shell root-config --cflags)
 LFLAGS = -shared -Wl
@@ -13,16 +12,19 @@ LIBS = $(shell root-config --libs)
 all: $(TARGET)
 
 clean:
-	rm -f $(TARGET) *.o src/pdfDict.* > /dev/null 2>&1
+	rm -f $(TARGET) build/*.o src/pdfDict.* > /dev/null 2>&1
 
-$(TARGET): $(ALLOBJECTS)
+$(TARGET): $(PDFOBJECTS) build/pdfDict.o
 	g++ $(LFLAGS) -o $(TARGET) $(LIBS) $^
 
-pdfDict.o: src/pdfDict.cc
+build/pdfDict.o: build/pdfDict.cc | build
 	g++ $(CFLAGS) $(EXTRAINC) -o $@ $< $(LIBS)
 
-%.o: src/%.cc include/%.h
+build/%.o: src/%.cc include/%.h | build
 	g++ $(CFLAGS) $(EXTRAINC) -o $@ $< $(LIBS)
 
-src/pdfDict.cc: $(PDFHEADERS) src/LinkDef.h
+build:
+	@mkdir -p $@
+
+build/pdfDict.cc: $(PDFHEADERS) src/LinkDef.h
 	rootcint -f $@ -c $(EXTRAINC) $^

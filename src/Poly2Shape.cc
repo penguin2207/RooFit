@@ -8,7 +8,7 @@
 
 #include "Riostream.h" 
 
-#include "Poly2Shape.h" 
+#include "../include/Poly2Shape.h" 
 #include "RooAbsReal.h" 
 #include "RooAbsCategory.h" 
 #include <math.h> 
