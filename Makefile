@@ -1,10 +1,10 @@
-TARGET = libSusyRooFit.so
+TARGET = libCommonRooFit.so
 PDFSOURCES = $(wildcard src/*.cc)
 PDFHEADERS = $(patsubst src/%.cc,include/%.h,$(PDFSOURCES))
 PDFOBJECTS = $(patsubst src/%.cc,build/%.o,$(PDFSOURCES))
 
 CFLAGS = -c -O3 -Wall -fPIC $(shell root-config --cflags)
-LFLAGS = -shared -Wl
+LFLAGS = -shared
 
 EXTRAINC = -I. -I$(subst lib/libRooFit.so,include,$(CMSSW_RELEASE_BASE)/external/$(SCRAM_ARCH)/lib/$(shell readlink $(CMSSW_RELEASE_BASE)/external/$(SCRAM_ARCH)/lib/libRooFit.so))
 LIBS = $(shell root-config --libs)

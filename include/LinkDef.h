@@ -7,4 +7,6 @@
 #pragma link C++ class GausPLShape;
 #pragma link C++ class Poly2Shape;
 #pragma link C++ class Poly2PLShape;
+#pragma link C++ class StaticShape;
+#pragma link C++ class KeysShape;
 #endif
