@@ -27,4 +27,5 @@ build:
 	@mkdir -p $@
 
 build/pdfDict.cc: $(PDFHEADERS) include/LinkDef.h
-	rootcint -f $@ -c $(EXTRAINC) $^
+	rootcling -f $@ $(EXTRAINC) $^
+	mv build/pdfDict_rdict.pcm .

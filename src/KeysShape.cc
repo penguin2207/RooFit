@@ -16,6 +16,7 @@
 #include "TThread.h"
 
 #include <stdexcept>
+#include <cstring>
 
 ClassImp(KeysShape)
 
@@ -25,33 +26,36 @@ double const cutoff(5.);
 KeysShape::KeysShape(const char *name, const char *title, RooRealVar& _x, TTree& _ntuples, const char* _wgtVar/* = 0*/, double _rho/* = 0.5*/, unsigned _nCPU/* = 1*/, unsigned _nBins/* = 1000*/) :
   StaticShape(name, title, _x, _x.getMin(), _x.getMax(), 0, _nBins + 1)
 {
+  TString wgtVar(TString(_wgtVar).Strip(TString::kBoth));
+
   // setup input data
-  if(!_ntuples.GetLeaf(_x.GetName()) || (_wgtVar && !_ntuples.GetLeaf(_wgtVar)))
+  if (!_ntuples.GetLeaf(_x.GetName()) || (wgtVar.Length() != 0 && !_ntuples.GetLeaf(wgtVar)))
     throw std::invalid_argument("Input tree does not have necessary variables");
 
-  if(_ntuples.GetEstimate() <= _ntuples.GetEntries())
+  if (_ntuples.GetEstimate() <= _ntuples.GetEntries())
     throw std::runtime_error("Ntuples estimate size too small");
 
   TString columns(_x.GetName());
-  if(_wgtVar){
+  if (wgtVar.Length() != 0) {
     columns += ":";
-    columns += _wgtVar;
+    columns += wgtVar;
   }
 
   // nData can be different from nEntries when Event/EntryList is loaded to the tree
   long nData(_ntuples.Draw(columns, "", "goff"));
   double* xdata(_ntuples.GetV1());
-  double* wdata(_wgtVar ? _ntuples.GetV2() : 0);
+  double* wdata(wgtVar.Length() != 0 ? _ntuples.GetV2() : 0);
 
-  std::vector<double> dataval(nData);
-  std::vector<double> datawgt(wdata ? nData : 0);
+  // std::vector<double> dataval(xdata, xdata + nData);
+  // std::vector<double> datawgt(wdata ? nData : 0);
 
-  for(long iRow(0); iRow != nData; ++iRow){
-    dataval[iRow] = xdata[iRow];
-    if(wdata) datawgt[iRow] = wdata[iRow];
-  }
+  // for(long iRow(0); iRow != nData; ++iRow){
+  //   dataval[iRow] = xdata[iRow];
+  //   if(wdata) datawgt[iRow] = wdata[iRow];
+  // }
 
-  _calculate(nData, &(dataval[0]), wdata ? &(datawgt[0]) : 0, _rho, _nCPU);
+  //  _calculate(nData, &(dataval[0]), wdata ? &(datawgt[0]) : 0, _rho, _nCPU);
+  _calculate(nData, xdata, wdata, _rho, _nCPU);
 }
 
 KeysShape::KeysShape(const char *name, const char *title, RooRealVar& _x, RooDataSet& _dataset, double _rho/* = 0.5*/, unsigned _nCPU/* = 1*/, unsigned _nBins/* = 1000*/) :
@@ -96,6 +100,9 @@ KeysShape::_calculate(unsigned _nData, double const* _dataval, double const* _da
     sumx2w += xval * xval * weight;
   }
 
+  if (cd.sumw < 0. || sumxw < 0. || sumx2w < 0.)
+    throw std::runtime_error("Negative sumw");
+
   double globalMean(sumxw / cd.sumw);
   double globalSigma(TMath::Sqrt(sumx2w / cd.sumw - globalMean * globalMean));
   cd.h0 = TMath::Power(4. / 3. / cd.nData, 0.2) * globalSigma;
@@ -139,6 +146,13 @@ KeysShape::_calculate(unsigned _nData, double const* _dataval, double const* _da
 
       for(unsigned iP(0); iP != ny_; ++iP)
     	yvals_[iP] += cdCopies[iCPU - 1].yvals[iP];
+    }
+
+    for (unsigned iP(0); iP != ny_; ++iP) {
+      if (yvals_[iP] < 0.) {
+        std::cout << "Info (KeysShape): Forcing yvalue @ (x = " << xvals_[iP] << ") to 0" << std::endl;
+        yvals_[iP] = 0.;
+      }
     }
   }
 }
